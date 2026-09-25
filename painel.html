@@ -30,7 +30,7 @@
 <body>
 <main>
   <h1>Disparo Igor Timo</h1>
-  <div class="sub">Atualiza a cada 10s · <span id="upd">—</span></div>
+  <div class="sub"><span id="demo" style="display:none;border:1px solid var(--bd);border-radius:99px;padding:1px 8px;margin-right:6px;font-size:12px">demonstração</span>Atualiza a cada 10s · <span id="upd">—</span></div>
 
   <div class="card">
     <span class="status"><span class="dot" id="dot"></span><span id="status">carregando…</span></span>
@@ -56,12 +56,14 @@
   </div>
 </main>
 <script>
-const k = new URLSearchParams(location.search).get("k") || "";
+const qs = new URLSearchParams(location.search);
+const k = qs.get("k") || "";
+const demo = qs.get("demo") ? "&demo=1" : "";
 const fmt = n => n == null ? "—" : n.toLocaleString("pt-BR");
 const hora = s => new Date(s).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
 async function load() {
   try {
-    const d = await (await fetch("api/stats?k=" + encodeURIComponent(k))).json();
+    const d = await (await fetch("api/stats?k=" + encodeURIComponent(k) + demo)).json();
     for (const id of ["enviados","pendentes","ultima_hora","hoje","optout","sem_whatsapp"])
       document.getElementById(id).textContent = fmt(d[id]);
     const feito = d.enviados + d.optout + d.sem_whatsapp;
@@ -79,6 +81,7 @@ async function load() {
       for (const v of [r.nome || r.numero, hora(r.hora)]) { const td = document.createElement("td"); td.textContent = v; tr.append(td); }
       return tr;
     }));
+    document.getElementById("demo").style.display = d.demo ? "inline" : "none";
     document.getElementById("upd").textContent = "atualizado às " + new Date().toLocaleTimeString("pt-BR");
   } catch (e) { document.getElementById("status").textContent = "erro ao carregar"; }
 }

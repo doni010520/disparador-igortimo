@@ -1,7 +1,7 @@
 import re
 import time
 import random
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import openpyxl
@@ -13,6 +13,8 @@ from config import (
     DELAY_ENTRE_MSGS, DELAY_MIN, DELAY_MAX,
     PLANILHA, OPTOUT_FILE, LOG_FILE, FALHAS_FILE,
 )
+
+BRT = timezone(timedelta(hours=-3))
 
 HEADERS = {"token": UAZAPI_TOKEN, "Content-Type": "application/json"}
 
@@ -40,7 +42,7 @@ def ler_numeros(path: str) -> set:
 
 def anexar(path: str, *campos):
     with open(path, "a", encoding="utf-8") as f:
-        f.write("\t".join([*campos, datetime.now().isoformat(timespec="seconds")]) + "\n")
+        f.write("\t".join([*campos, datetime.now(BRT).isoformat(timespec="seconds")]) + "\n")
 
 
 def carregar_contatos() -> list[tuple[str, str]]:

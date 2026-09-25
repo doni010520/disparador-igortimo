@@ -1,4 +1,5 @@
 import os
+import random
 import threading
 import time
 from datetime import datetime, timedelta
@@ -24,12 +25,50 @@ def autorizado():
     return not PAINEL_SENHA or request.args.get("k") == PAINEL_SENHA
 
 
+NOMES_DEMO = [
+    "Ana Paula Souza", "José Carlos Lima", "Maria das Graças Oliveira", "Antônio Pereira",
+    "Francisca Alves", "João Batista Rocha", "Luzia Martins", "Sebastião Costa",
+    "Raimunda Ferreira", "Pedro Henrique Dias", "Terezinha Gomes", "Manoel Ribeiro",
+    "Conceição Barbosa", "Francisco Nunes", "Aparecida Teixeira", "Geraldo Moreira",
+]
+
+
+def stats_demo():
+    agora = datetime.now(disparador.BRT)
+    inicio = agora.replace(hour=9, minute=30, second=0, microsecond=0)
+    fim = min(agora, agora.replace(hour=13, minute=0, second=0, microsecond=0))
+    rnd = random.Random(agora.date().toordinal())
+    n = max(int((fim - inicio).total_seconds() / 120), 0)
+    ts = [inicio + timedelta(seconds=120 * i + 60 + rnd.uniform(-25, 25)) for i in range(n)]
+    t = inicio + timedelta(seconds=120 * n + 60)
+    total = 10631
+    optout, sem_wa = 2, 9
+    proximo = int((t - agora).total_seconds()) if agora < agora.replace(hour=13) else None
+    return {
+        "demo": True,
+        "total": total,
+        "enviados": len(ts),
+        "optout": optout,
+        "sem_whatsapp": sem_wa,
+        "pendentes": total - len(ts) - optout - sem_wa,
+        "ultima_hora": sum(1 for x in ts if agora - x < timedelta(hours=1)),
+        "hoje": len(ts),
+        "ultimo_envio": ts[-1].isoformat() if ts else None,
+        "status": "aguardando" if proximo else "encerrado por hoje (9h30 às 13h)",
+        "atual": None,
+        "proximo_em": proximo if proximo and proximo > 0 else None,
+        "recentes": [{"numero": "", "nome": rnd.choice(NOMES_DEMO), "hora": x.isoformat()} for x in ts[-15:][::-1]],
+    }
+
+
 @app.get("/api/stats")
 def stats():
     if not autorizado():
         return jsonify({"erro": "não autorizado"}), 401
+    if request.args.get("demo"):
+        return jsonify(stats_demo())
     enviados = linhas(LOG_FILE)
-    agora = datetime.now()
+    agora = datetime.now(disparador.BRT)
     ts = [datetime.fromisoformat(l[-1]) for l in enviados if len(l) >= 3]
     ultima_hora = sum(1 for t in ts if agora - t < timedelta(hours=1))
     hoje = sum(1 for t in ts if t.date() == agora.date())
