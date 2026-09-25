@@ -58,12 +58,20 @@ def post(endpoint: str, payload: dict) -> requests.Response:
     return requests.post(f"{UAZAPI_URL}{endpoint}", json=payload, headers=HEADERS, timeout=60)
 
 
-def instancia_conectada() -> bool:
+def bloqueio() -> str | None:
+    """Retorna o motivo para não enviar agora, ou None se está liberado."""
     try:
         r = requests.get(f"{UAZAPI_URL}/instance/status", headers=HEADERS, timeout=30)
-        return r.json().get("instance", {}).get("status") == "connected"
-    except Exception:
-        return False
+        if r.json().get("instance", {}).get("status") != "connected":
+            return "instância desconectada"
+        r = requests.get(f"{UAZAPI_URL}/instance/wa_messages_limits", headers=HEADERS, timeout=30)
+        d = r.json()
+        if d.get("can_send_new_messages") is False:
+            ate = (d.get("reachout_timelock") or {}).get("until", "")
+            return f"WhatsApp restringiu novas conversas até {ate}"
+        return None
+    except Exception as e:
+        return f"erro ao checar instância: {e}"
 
 
 def enviar(numero: str) -> tuple[bool, str]:
@@ -87,10 +95,10 @@ def main():
     print(f"Contatos válidos: {len(contatos)} | pendentes: {len(pendentes)}", flush=True)
 
     for numero, nome in pendentes:
-        while not instancia_conectada():
-            estado["status"] = "pausado: instância desconectada"
-            print("Instância desconectada, aguardando 60s...", flush=True)
-            time.sleep(60)
+        while motivo := bloqueio():
+            estado.update(status=f"pausado: {motivo}", atual=None, proximo_em=None)
+            print(f"Pausado ({motivo}), checando de novo em 10 min", flush=True)
+            time.sleep(600)
 
         if numero in ler_numeros(OPTOUT_FILE):
             continue
