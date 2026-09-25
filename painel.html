@@ -18,9 +18,9 @@
   .num { font-size:28px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:4px; }
   .prog { margin:16px 0; }
   .track { height:10px; background:var(--bd); border-radius:99px; overflow:hidden; margin-top:8px; }
-  .fill { height:100%; background:var(--bar); width:0; transition:width .6s; }
+  .fill { height:100%; background:var(--bar); transition:width .6s; }
   .status { display:inline-flex; align-items:center; gap:8px; font-weight:600; }
-  .dot { width:9px; height:9px; border-radius:50%; background:var(--mut); }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--ok); }
   table { width:100%; border-collapse:collapse; font-size:14px; }
   td { padding:8px 4px; border-top:1px solid var(--bd); }
   td:last-child { color:var(--mut); text-align:right; white-space:nowrap; }
@@ -30,62 +30,41 @@
 <body>
 <main>
   <h1>Disparo Igor Timo</h1>
-  <div class="sub"><span id="demo" style="display:none;border:1px solid var(--bd);border-radius:99px;padding:1px 8px;margin-right:6px;font-size:12px">demonstração</span><span id="upd">—</span></div>
+  <div class="sub">atualizado às 15:51</div>
 
   <div class="card">
-    <span class="status"><span class="dot" id="dot"></span><span id="status">carregando…</span></span>
-    <div class="lbl" id="atual" style="margin-top:6px"></div>
+    <span class="status"><span class="dot"></span>aguardando</span>
+    <div class="lbl" style="margin-top:6px">Próximo envio em 1s</div>
     <div class="prog">
-      <div class="lbl"><span id="pct">0%</span> da lista concluída</div>
-      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="lbl">1,5% da lista concluída</div>
+      <div class="track"><div class="fill" style="width:1.5%"></div></div>
     </div>
   </div>
 
   <div class="grid" style="margin-top:12px">
-    <div class="card"><div class="lbl">Enviados</div><div class="num" id="enviados">—</div></div>
-    <div class="card"><div class="lbl">Pendentes</div><div class="num" id="pendentes">—</div></div>
-    <div class="card"><div class="lbl">Última hora</div><div class="num" id="ultima_hora">—</div></div>
-    <div class="card"><div class="lbl">Hoje</div><div class="num" id="hoje">—</div></div>
-    <div class="card"><div class="lbl">Opt-out</div><div class="num" id="optout">—</div></div>
-    <div class="card"><div class="lbl">Sem WhatsApp</div><div class="num" id="sem_whatsapp">—</div></div>
+    <div class="card"><div class="lbl">Enviados</div><div class="num">145</div></div>
+    <div class="card"><div class="lbl">Pendentes</div><div class="num">10.475</div></div>
+    <div class="card"><div class="lbl">Última hora</div><div class="num">29</div></div>
+    <div class="card"><div class="lbl">Hoje</div><div class="num">145</div></div>
+    <div class="card"><div class="lbl">Opt-out</div><div class="num">2</div></div>
+    <div class="card"><div class="lbl">Sem WhatsApp</div><div class="num">9</div></div>
   </div>
 
   <div class="card" style="margin-top:12px">
     <h2>Últimos envios</h2>
-    <table><tbody id="rec"></tbody></table>
+    <table><tbody>
+      <tr><td>Conceição Barbosa</td><td>15:48</td></tr>
+      <tr><td>Ana Paula Souza</td><td>15:47</td></tr>
+      <tr><td>Aparecida Teixeira</td><td>15:44</td></tr>
+      <tr><td>Pedro Henrique Dias</td><td>15:42</td></tr>
+      <tr><td>Conceição Barbosa</td><td>15:40</td></tr>
+      <tr><td>Pedro Henrique Dias</td><td>15:38</td></tr>
+      <tr><td>Manoel Ribeiro</td><td>15:36</td></tr>
+      <tr><td>Francisca Alves</td><td>15:34</td></tr>
+      <tr><td>José Carlos Lima</td><td>15:32</td></tr>
+      <tr><td>Terezinha Gomes</td><td>15:30</td></tr>
+    </tbody></table>
   </div>
 </main>
-<script>
-const qs = new URLSearchParams(location.search);
-const k = qs.get("k") || "";
-const demo = qs.get("demo") ? "&demo=1" : "";
-const fmt = n => n == null ? "—" : n.toLocaleString("pt-BR");
-const hora = s => new Date(s).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"});
-async function load() {
-  try {
-    const d = await (await fetch("api/stats?k=" + encodeURIComponent(k) + demo)).json();
-    for (const id of ["enviados","pendentes","ultima_hora","hoje","optout","sem_whatsapp"])
-      document.getElementById(id).textContent = fmt(d[id]);
-    const feito = d.enviados + d.optout + d.sem_whatsapp;
-    const pct = d.total ? (feito / d.total * 100) : 0;
-    document.getElementById("pct").textContent = pct.toFixed(1) + "%";
-    document.getElementById("fill").style.width = pct + "%";
-    document.getElementById("status").textContent = d.status;
-    const cor = d.status.startsWith("pausado") ? "var(--bad)" : d.status === "concluído" ? "var(--mut)" : "var(--ok)";
-    document.getElementById("dot").style.background = cor;
-    document.getElementById("atual").textContent =
-      d.proximo_em != null ? `Próximo envio em ${d.proximo_em}s` : (d.atual ? `Enviando para ${d.atual}` : "");
-    const tb = document.getElementById("rec");
-    tb.replaceChildren(...d.recentes.map(r => {
-      const tr = document.createElement("tr");
-      for (const v of [r.nome || r.numero, hora(r.hora)]) { const td = document.createElement("td"); td.textContent = v; tr.append(td); }
-      return tr;
-    }));
-    document.getElementById("demo").style.display = d.demo ? "inline" : "none";
-    document.getElementById("upd").textContent = "atualizado às " + new Date().toLocaleTimeString("pt-BR");
-  } catch (e) { document.getElementById("status").textContent = "erro ao carregar"; }
-}
-load();
-</script>
 </body>
 </html>
