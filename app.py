@@ -33,17 +33,21 @@ NOMES_DEMO = [
 ]
 
 
+JANELAS_DEMO = [((9, 30), (13, 0)), ((14, 30), None)]
+
+
 def stats_demo():
     agora = datetime.now(disparador.BRT)
-    inicio = agora.replace(hour=9, minute=30, second=0, microsecond=0)
-    fim = min(agora, agora.replace(hour=13, minute=0, second=0, microsecond=0))
     rnd = random.Random(agora.date().toordinal())
-    n = max(int((fim - inicio).total_seconds() / 120), 0)
-    ts = [inicio + timedelta(seconds=120 * i + 60 + rnd.uniform(-25, 25)) for i in range(n)]
-    t = inicio + timedelta(seconds=120 * n + 60)
-    total = 10631
-    optout, sem_wa = 2, 9
-    proximo = int((t - agora).total_seconds()) if agora < agora.replace(hour=13) else None
+    ts, proximo = [], None
+    for (hi, mi), fim_hm in JANELAS_DEMO:
+        inicio = agora.replace(hour=hi, minute=mi, second=0, microsecond=0)
+        fim = agora if fim_hm is None else min(agora, agora.replace(hour=fim_hm[0], minute=fim_hm[1], second=0, microsecond=0))
+        n = max(int((fim - inicio).total_seconds() / 120), 0)
+        ts += [inicio + timedelta(seconds=120 * i + 60 + rnd.uniform(-25, 25)) for i in range(n)]
+        if fim_hm is None and agora > inicio:
+            proximo = int((inicio + timedelta(seconds=120 * n + 60) - agora).total_seconds())
+    total, optout, sem_wa = 10631, 2, 9
     return {
         "demo": True,
         "total": total,
@@ -54,9 +58,9 @@ def stats_demo():
         "ultima_hora": sum(1 for x in ts if agora - x < timedelta(hours=1)),
         "hoje": len(ts),
         "ultimo_envio": ts[-1].isoformat() if ts else None,
-        "status": "aguardando" if proximo else "encerrado por hoje (9h30 às 13h)",
+        "status": "aguardando" if proximo else "pausado",
         "atual": None,
-        "proximo_em": proximo if proximo and proximo > 0 else None,
+        "proximo_em": max(proximo, 1) if proximo else None,
         "recentes": [{"numero": "", "nome": rnd.choice(NOMES_DEMO), "hora": x.isoformat()} for x in ts[-15:][::-1]],
     }
 
