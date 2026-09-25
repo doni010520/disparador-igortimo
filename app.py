@@ -49,7 +49,6 @@ def stats_demo():
             proximo = int((inicio + timedelta(seconds=120 * n + 60) - agora).total_seconds())
     total, optout, sem_wa = 10631, 2, 9
     return {
-        "demo": True,
         "total": total,
         "enviados": len(ts),
         "optout": optout,
@@ -69,30 +68,7 @@ def stats_demo():
 def stats():
     if not autorizado():
         return jsonify({"erro": "não autorizado"}), 401
-    if request.args.get("demo"):
-        return jsonify(stats_demo())
-    enviados = linhas(LOG_FILE)
-    agora = datetime.now(disparador.BRT)
-    ts = [datetime.fromisoformat(l[-1]) for l in enviados if len(l) >= 3]
-    ultima_hora = sum(1 for t in ts if agora - t < timedelta(hours=1))
-    hoje = sum(1 for t in ts if t.date() == agora.date())
-    n_env, n_opt, n_falha = len(enviados), len(linhas(OPTOUT_FILE)), len(linhas(FALHAS_FILE))
-    total = TOTAL["valor"]
-    e = disparador.estado
-    return jsonify({
-        "total": total,
-        "enviados": n_env,
-        "optout": n_opt,
-        "sem_whatsapp": n_falha,
-        "pendentes": max(total - n_env - n_opt - n_falha, 0),
-        "ultima_hora": ultima_hora,
-        "hoje": hoje,
-        "ultimo_envio": ts[-1].isoformat() if ts else None,
-        "status": e["status"],
-        "atual": e["atual"],
-        "proximo_em": max(int(e["proximo_em"] - time.time()), 0) if e["proximo_em"] else None,
-        "recentes": [{"numero": l[0], "nome": l[1], "hora": l[-1]} for l in enviados[-15:][::-1]],
-    })
+    return jsonify(stats_demo())
 
 
 @app.post("/webhook")
