@@ -30,7 +30,7 @@
 <body>
 <main>
   <h1>Disparo Igor Timo</h1>
-  <div class="sub"><span id="demo" style="display:none;border:1px solid var(--bd);border-radius:99px;padding:1px 8px;margin-right:6px;font-size:12px">demonstração</span>Atualiza a cada 10s · <span id="upd">—</span></div>
+  <div class="sub"><span id="demo" style="display:none;border:1px solid var(--bd);border-radius:99px;padding:1px 8px;margin-right:6px;font-size:12px">demonstração</span><span id="upd">—</span></div>
 
   <div class="card">
     <span class="status"><span class="dot" id="dot"></span><span id="status">carregando…</span></span>
@@ -85,7 +85,7 @@ async function load() {
     document.getElementById("upd").textContent = "atualizado às " + new Date().toLocaleTimeString("pt-BR");
   } catch (e) { document.getElementById("status").textContent = "erro ao carregar"; }
 }
-load(); setInterval(load, 10000);
+load();
 </script>
 </body>
 </html>
